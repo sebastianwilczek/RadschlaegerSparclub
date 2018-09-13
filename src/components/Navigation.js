@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { StyleSheet, Alert, AsyncStorage, TouchableOpacity, Text, TextInput, View, TouchableHighlight, Modal } from 'react-native';
+import { AsyncStorage, StyleSheet, Alert, FlatList, TouchableOpacity, TextInput, View, TouchableHighlight, Modal } from 'react-native';
 import { SparenModal } from './SparenModal';
-import { FABGroup } from 'react-native-paper';
+import { FABGroup, Button, Text, Card, CardActions, CardContent, Title, Paragraph } from 'react-native-paper';
 
 const styles = StyleSheet.create({
     container: {
@@ -22,12 +22,28 @@ const styles = StyleSheet.create({
     },
   });
 
+function formatDate(dateString) {
+    var date = new Date(dateString);
+
+    var monthNames = [
+        "Januar", "Februar", "März",
+        "April", "Mai", "Juni", "Juli",
+        "August", "September", "Oktober",
+        "November", "Dezember"
+    ];
+    
+
+    return ('0' + date.getDate()).slice(-2) + '. ' + monthNames[date.getMonth()] + ' ' +  date.getFullYear();
+}
+
 export class Navigation extends React.Component {
 
     
     state = {
         modalVisible: false,
-        open: false
+        open: false,
+        records: [],
+        totalMoney: 0.0
     };
     
     _showModal = () => {
@@ -39,10 +55,66 @@ export class Navigation extends React.Component {
         this.setState({ modalVisible: false });
         this.setState({ open: false });
     }
+    _save = (money, date) => {
+        //alert('Modal has been closed.');   
+        this.setState({ modalVisible: false });
+        this.setState({ open: false });
+        var record = {money: money, date: date.toString()};
+        this.state.records.unshift(record);
+        this._recomputeSavedMoney();
+        this._storeRecords();
+    }
+    _storeRecords = async () => {
+        try {
+            await AsyncStorage.setItem("records", JSON.stringify(this.state.records));
+        } catch (error) {
+            alert("Beträge konnten nicht gespeichert werden." + error)
+        }
+    }
+    _retrieveRecords = async () => {
+        try {
+            const value = await AsyncStorage.getItem('records');
+            if (value !== null) {
+                this.setState({records: JSON.parse(value)}, () => {this._recomputeSavedMoney()});
+            }
+        } catch (error) {
+            this.setState({records: []});
+        }
+    }
+    _recomputeSavedMoney = () => {
+        var total = 0.0;
+        for (var i = 0; i < this.state.records.length; i++) {
+            total += this.state.records[i].money;
+        }
+        this.setState({totalMoney: total});
+    }
+
+    componentDidMount() {
+        this._retrieveRecords();
+    }
+
+    
+
+    renderFlatListItem(item){
+        return (
+            <Card>
+                <CardContent>
+                    <Title>{"€" + (item.money).toFixed(2)}</Title>
+                    <Paragraph>{formatDate(item.date)}</Paragraph>
+                </CardContent>
+                <CardActions>
+                    <Button
+                        style={{
+                            alignSelf: 'flex-end'
+                            }}>Löschen</Button>
+                </CardActions>
+            </Card>
+        )
+    }
+
+    keyExtractor = (item, index) => item.date;
 
     render() {
-        const { modalVisible } = this.state;
-
         switch (this.props.screen) {
             case 'main':
                 return (
@@ -61,15 +133,40 @@ export class Navigation extends React.Component {
                             }}
                         />
                         
-                        <Text>Hier wird eingetragen, was bisher gespart wurde.</Text>
+                        <View
+                            style={{
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                margin: 10
+                            }}>
+                            <Text style={{fontSize: 40}}>Total: €{this.state.totalMoney.toFixed(2)}</Text>
+                        </View>
+                        {/* <Text>{JSON.stringify(this.state.records)}</Text> */}
 
-                        <SparenModal modalVisible={this.state.modalVisible} closeHandler={this._hideModal}/>
+                        <View
+                            style={{
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'stretch',
+                                margin: 10
+                            }}>
+                            <FlatList
+                                contentContainerStyle={{ paddingBottom: 220}}
+                                data={this.state.records}
+                                keyExtractor={(item, index) => index.toString()}
+                                renderItem={({item}) => this.renderFlatListItem(item)}
+                            />
+                        </View>
+
+                        <SparenModal modalVisible={this.state.modalVisible} closeHandler={this._hideModal} saveHandler={this._save}/>
                     </View>
                 );
             default:
                 return (
                     <View>
                         <Text>Hier werden die Einstellungen angezeigt.</Text>
+                        <Button onPress={() => {AsyncStorage.setItem("records", JSON.stringify([]))}}>Clear Storage</Button>
                     </View>
                 );
         }

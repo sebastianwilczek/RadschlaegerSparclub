@@ -13,12 +13,14 @@ export class SparenModal extends React.Component {
         notSaved: false,
         date: new Date(),
         isDateTimePickerVisible: false,
-        errorText: ''
+        errorText: '',
+        savedMoney: 0.0
     };
     
     constructor(props) {
         super(props);
         this.closeHandler = this.closeHandler.bind(this);
+        this.saveHandler = this.saveHandler.bind(this);
     }
 
     _showDateTimePicker = () => {
@@ -34,48 +36,55 @@ export class SparenModal extends React.Component {
     };
 
     _handleSaveClicked = () => {
-        if(this.evaluateMoney()){
+        var money = this.state.saved;
 
-            //Add to calendar manually
-            /* var eventConfig = {
-                title: 'Title',
-                //startDate: this.state.date.toUTCString(),
-                //endDate: this.state.date.toUTCString(),
-                allDay: true,
-                notes: 'Gespart'
-            };
-
-            AddCalendarEvent.presentEventCreatingDialog(eventConfig)
-                .then((eventInfo) => {
-                    // handle success - receives an object with `calendarItemIdentifier` and `eventIdentifier` keys, both of type string.
-                    // These are two different identifiers on iOS.
-                    // On Android, where they are both equal and represent the event id, also strings.
-                    // when { action: 'CANCELLED' } is returned, the dialog was dismissed
-                    console.warn(JSON.stringify(eventInfo));
-                })
-                .catch((error) => {
-                    // handle error such as when user rejected permissions
-                    console.warn(error);
-                }); */
+        if(this.state.notSaved){
+            this.setState({ saved: '-0.50' });
+            money = '-0.50'
         }
 
-        
-    };
-
-    evaluateMoney = () => {
         var moneyRegex = /^[+-]?((\.\d+)|(\d+(\.\d+)?))$/;
-        var isMoneyExpression = moneyRegex.test(this.state.saved);
+        var isMoneyExpression = moneyRegex.test(money);
         
         if(isMoneyExpression || this.state.notSaved){
-            return true;
+            var moneyValue = +(money);
+
+            //alert("Betrag: €" + moneyValue.toFixed(2) + "\nDatum: " + this.state.date);
+            this.saveHandler(moneyValue, this.state.date);
         }else{
             alert('Es wurde kein richtiger Betrag angegeben (Beispiel: 20.50).');
-            return false;
+            return;
         }
-    }
+
+        //Add to calendar manually
+        /* var eventConfig = {
+            title: 'Title',
+            //startDate: this.state.date.toUTCString(),
+            //endDate: this.state.date.toUTCString(),
+            allDay: true,
+            notes: 'Gespart'
+        };
+
+        AddCalendarEvent.presentEventCreatingDialog(eventConfig)
+            .then((eventInfo) => {
+                // handle success - receives an object with `calendarItemIdentifier` and `eventIdentifier` keys, both of type string.
+                // These are two different identifiers on iOS.
+                // On Android, where they are both equal and represent the event id, also strings.
+                // when { action: 'CANCELLED' } is returned, the dialog was dismissed
+                console.warn(JSON.stringify(eventInfo));
+            })
+            .catch((error) => {
+                // handle error such as when user rejected permissions
+                console.warn(error);
+            }); */
+    };
      
     closeHandler(){
         this.props.closeHandler();
+    }
+     
+    saveHandler(money, date){
+        this.props.saveHandler(money, date);
     }
 
     render() {
@@ -138,7 +147,11 @@ export class SparenModal extends React.Component {
                         <Switch
                             value={this.state.notSaved}
                             onValueChange={() => {
-                                this.setState({ notSaved: !this.state.notSaved });
+                                var newState = !this.state.notSaved
+                                this.setState({ notSaved: newState });
+                                if(!newState){
+                                    this.setState({ saved: ''});
+                                }
                             }}
                             style={{
                                 alignSelf: 'flex-end'
