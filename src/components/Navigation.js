@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { AsyncStorage, StyleSheet, Alert, FlatList, TouchableOpacity, TextInput, View, TouchableHighlight, Modal } from 'react-native';
 import { SparenModal } from './SparenModal';
-import { FABGroup, Button, Text, Card, CardActions, CardContent, Title, Paragraph } from 'react-native-paper';
+import { FAB, Portal, Button, Text, Card, Title, Paragraph, Surface, Snackbar } from 'react-native-paper';
 
 const styles = StyleSheet.create({
     container: {
@@ -43,7 +43,8 @@ export class Navigation extends React.Component {
         modalVisible: false,
         open: false,
         records: [],
-        totalMoney: 0.0
+        totalMoney: 0.0,
+        snackVisible: false
     };
     
     _showModal = () => {
@@ -59,6 +60,7 @@ export class Navigation extends React.Component {
         //alert('Modal has been closed.');   
         this.setState({ modalVisible: false });
         this.setState({ open: false });
+        this.setState({snackVisible: true});
         var record = {money: money, date: date.toString()};
         this.state.records.unshift(record);
         this._recomputeSavedMoney();
@@ -97,18 +99,20 @@ export class Navigation extends React.Component {
 
     renderFlatListItem(item){
         return (
-            <Card>
-                <CardContent>
-                    <Title>{"€" + (item.money).toFixed(2)}</Title>
-                    <Paragraph>{formatDate(item.date)}</Paragraph>
-                </CardContent>
-                <CardActions>
-                    <Button
-                        style={{
-                            alignSelf: 'flex-end'
-                            }}>Löschen</Button>
-                </CardActions>
-            </Card>
+            <Surface style={{elevation: 12, padding: 8}}>
+                <Card>
+                    <Card.Content>
+                        <Title>{"€" + (item.money).toFixed(2)}</Title>
+                        <Paragraph>{formatDate(item.date)}</Paragraph>
+                    </Card.Content>
+                    <Card.Actions>
+                        <Button
+                            style={{
+                                alignSelf: 'flex-end'
+                                }}>Löschen</Button>
+                    </Card.Actions>
+                </Card>
+            </Surface>
         )
     }
 
@@ -119,19 +123,28 @@ export class Navigation extends React.Component {
             case 'main':
                 return (
                     <View>
-                        <FABGroup
-                            open={this.state.open}
-                            icon={'add'}
-                            actions={[
-                                // { icon: 'notifications', label: 'Remind', onPress: () => {} },
-                            ]}
-                            onStateChange={({ open }) => this.setState({ open })}
-                            onPress={() => {
-                                //if (this.state.open) {
-                                    this._showModal();
-                                //}
-                            }}
-                        />
+                        <Portal>
+                            <FAB.Group
+                                open={this.state.open}
+                                icon={'add'}
+                                actions={[
+                                    // { icon: 'notifications', label: 'Remind', onPress: () => {} },
+                                ]}
+                                onStateChange={({ open }) => this.setState({ open })}
+                                onPress={() => {
+                                    //if (this.state.open) {
+                                        this._showModal();
+                                    //}
+                                }}
+                            />
+
+                            <Snackbar
+                                visible={this.state.snackVisible}
+                                onDismiss={() => this.setState({ snackVisible: false })}
+                                >
+                                Betrag wurde gespart!
+                            </Snackbar>
+                        </Portal>
                         
                         <View
                             style={{
@@ -166,7 +179,11 @@ export class Navigation extends React.Component {
                 return (
                     <View>
                         <Text>Hier werden die Einstellungen angezeigt.</Text>
-                        <Button onPress={() => {AsyncStorage.setItem("records", JSON.stringify([]))}}>Clear Storage</Button>
+                        <Button onPress={() => {
+                            AsyncStorage.setItem("records", JSON.stringify([]));
+                            this.setState({records: []});
+                            this.setState({totalMoney: 0.0});
+                            }}>Clear Storage</Button>
                     </View>
                 );
         }

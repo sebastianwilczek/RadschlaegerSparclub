@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 //import { DrawerLayoutAndroid, View } from 'react-native';
 //import DrawerItem, { Divider, DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 import { DrawerLayoutAndroid, StatusBar, View } from 'react-native';
-import { DefaultTheme, Divider, DrawerItem, Provider as PaperProvider } from 'react-native-paper';
+import { DefaultTheme, Divider, Drawer, Provider as PaperProvider } from 'react-native-paper';
 import { Navigation } from './src/components/Navigation';
 import { ToolbarApp } from './src/components/ToolbarApp';
 
@@ -26,9 +26,9 @@ export default class App extends Component {
   render() {
     var navigationView = (
       <View style={{flex: 1, backgroundColor: '#fff'}}>
-        <DrawerItem label="Sparen" active={this.state.screen=='main'} onPress={() => {this.setState({ screen: 'main' }); this.refs['DRAWER_REF'].closeDrawer();}}/>
+        <Drawer.Item label="Sparen" active={this.state.screen=='main'} onPress={() => {this.setState({ screen: 'main' }); this.refs['DRAWER_REF'].closeDrawer();}}/>
         <Divider />
-        <DrawerItem label="Einstellungen" active={this.state.screen=='settings'}  onPress={() => {this.setState({ screen: 'settings' }); this.refs['DRAWER_REF'].closeDrawer();}}/>
+        <Drawer.Item label="Einstellungen" active={this.state.screen=='settings'}  onPress={() => {this.setState({ screen: 'settings' }); this.refs['DRAWER_REF'].closeDrawer();}}/>
       </View>
     );
 
@@ -75,13 +75,13 @@ export default class App extends Component {
            visible={dialogVisible}
            onDismiss={this._hideDialog}
         >
-          <DialogTitle>Alert</DialogTitle>
-          <DialogContent>
+          <Dialog.Title>Alert</Dialog.Title>
+          <Dialog.Content>
             <Paragraph>This feature has not yet been implemented.</Paragraph>
-          </DialogContent>
-          <DialogActions>
+          </Dialog.Content>
+          <Dialog.Actions>
             <Button onPress={this._hideDialog}>Done</Button>
-          </DialogActions>
+          </Dialog.Actions>
         </Dialog>  */}
 
       </PaperProvider>

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Modal, TouchableOpacity } from 'react-native';
-import { Button, Chip, Divider, Switch, Text, TextInput } from 'react-native-paper';
+import { Button, Chip, Divider, Switch, Text, TextInput, Portal, HelperText } from 'react-native-paper';
 import { ToolbarModal } from './ToolbarModal';
 import DateTimePicker from 'react-native-modal-datetime-picker'
 import { Keyboard } from 'react-native'
@@ -13,7 +13,7 @@ export class SparenModal extends React.Component {
         notSaved: false,
         date: new Date(),
         isDateTimePickerVisible: false,
-        errorText: '',
+        errorVisible: false,
         savedMoney: 0.0
     };
     
@@ -52,7 +52,8 @@ export class SparenModal extends React.Component {
             //alert("Betrag: €" + moneyValue.toFixed(2) + "\nDatum: " + this.state.date);
             this.saveHandler(moneyValue, this.state.date);
         }else{
-            alert('Es wurde kein richtiger Betrag angegeben (Beispiel: 20.50).');
+            //alert('Es wurde kein richtiger Betrag angegeben (Beispiel: 20.50).');
+            this.setState({errorVisible: true});
             return;
         }
 
@@ -80,116 +81,124 @@ export class SparenModal extends React.Component {
     };
      
     closeHandler(){
+        this.setState({errorVisible: true});
         this.props.closeHandler();
     }
      
     saveHandler(money, date){
+        this.setState({errorVisible: false});
         this.props.saveHandler(money, date);
     }
 
     render() {
         return (
-            <Modal
-                animationType="fade"
-                transparent={false}
-                visible={this.props.modalVisible}
-                onRequestClose={() => {
-                    this.closeHandler();
-                }}>
-                <ToolbarModal closeHandler={this.closeHandler}/>
-                <View>
-                    {this.state.notSaved ? <View /> : 
+            <Portal>
+                <Modal
+                    animationType="fade"
+                    transparent={false}
+                    visible={this.props.modalVisible}
+                    onRequestClose={() => {
+                        this.closeHandler();
+                    }}>
+                    <ToolbarModal closeHandler={this.closeHandler}/>
                     <View>
-                        <TextInput
-                            label='Gespart (in Euro)'
-                            value={this.state.saved}
-                            placeholder='26.32'
-                            keyboardType = 'numeric'
-                            disabled={this.state.notSaved}
-                            onChangeText={saved => this.setState({ saved })}
-                            style={{
-                                margin: 10,
-                                marginTop: -15,
-                                marginBottom: 0
-                            }}
-                        />
+                        {this.state.notSaved ? <View /> : 
+                        <View>
+                            <TextInput
+                                label='Gespart (in Euro)'
+                                value={this.state.saved}
+                                placeholder='26.32'
+                                keyboardType = 'numeric'
+                                disabled={this.state.notSaved}
+                                onChangeText={saved => this.setState({ saved })}
+                                style={{
+                                    margin: 10
+                                }}
+                            />
+                            {this.state.errorVisible ?
+                                <HelperText
+                                    type="error"
+                                    visible={this.state.errorVisible}
+                                >Es wurde kein richtiger Betrag angegeben (Beispiel: 20.50).</HelperText>
+                            : <View /> }
+
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'stretch',
+                                    margin: 5
+                                }}
+                            >
+                                <Chip icon='euro-symbol' style={{flex: 1, margin: 5}} onPress={() => {this.setState({ saved: '2.00' })}}>2</Chip>
+                                <Chip icon='euro-symbol' style={{flex: 1, margin: 5}} onPress={() => {this.setState({ saved: '5.00' })}}>5</Chip>
+                                <Chip icon='euro-symbol' style={{flex: 1, margin: 5}} onPress={() => {this.setState({ saved: '10.00' })}}>10</Chip>
+                                <Chip icon='euro-symbol' style={{flex: 1, margin: 5}} onPress={() => {this.setState({ saved: '20.00' })}}>20</Chip>
+                                <Chip icon='euro-symbol' style={{flex: 1, margin: 5}} onPress={() => {this.setState({ saved: '50.00' })}}>50</Chip>
+                            </View>
+                        </View>
+                        }
 
                         <View
                             style={{
                                 flexDirection: 'row',
-                                alignItems: 'stretch',
-                                margin: 10
+                                alignItems: 'center',
+                                margin: 10,
+                                marginTop: this.state.notSaved ? 15 : 0
                             }}
                         >
-                            <Chip style={{flex: 1}} onPress={() => {this.setState({ saved: '2.00' })}}>€2</Chip>
-                            <Chip style={{flex: 1}} onPress={() => {this.setState({ saved: '5.00' })}}>€5</Chip>
-                            <Chip style={{flex: 1}} onPress={() => {this.setState({ saved: '10.00' })}}>€10</Chip>
-                            <Chip style={{flex: 1}} onPress={() => {this.setState({ saved: '20.00' })}}>€20</Chip>
-                            <Chip style={{flex: 1}} onPress={() => {this.setState({ saved: '50.00' })}}>€50</Chip>
-                        </View>
-                    </View>
-                    }
+                            <Text
+                                style={{
+                                    fontSize: 16,
+                                    flex: 1
+                                }}>Nicht gespart?</Text>
+                            <Switch
+                                value={this.state.notSaved}
+                                onValueChange={() => {
+                                    var newState = !this.state.notSaved
+                                    this.setState({ notSaved: newState });
+                                    if(!newState){
+                                        this.setState({ saved: ''});
+                                    }
+                                }}
+                                style={{
+                                    alignSelf: 'flex-end'
+                                }}
+                            />
 
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            margin: 10,
-                            marginTop: this.state.notSaved ? 15 : 0,
-                            marginBottom: 0
-                        }}
-                    >
-                        <Text
+                        </View>
+
+                        <TextInput
+                            label='Datum'
+                            value={this.state.date.toDateString()}
+                            keyboardType = 'numeric'
                             style={{
-                                fontSize: 16,
-                                flex: 1
-                            }}>Nicht gespart?</Text>
-                        <Switch
-                            value={this.state.notSaved}
-                            onValueChange={() => {
-                                var newState = !this.state.notSaved
-                                this.setState({ notSaved: newState });
-                                if(!newState){
-                                    this.setState({ saved: ''});
-                                }
+                                margin: 10,
+                                marginTop: 0
                             }}
-                            style={{
-                                alignSelf: 'flex-end'
-                            }}
+                            onFocus={this._showDateTimePicker}
                         />
 
+                        <DateTimePicker
+                            isVisible={this.state.isDateTimePickerVisible}
+                            onConfirm={this._handleDatePicked}
+                            onCancel={this._hideDateTimePicker}
+                        />
+
+                        <Button
+                            mode="contained"
+                            style={{
+                                margin: 10,
+                                marginTop: 0
+                            }}
+                            onPress={() => this._handleSaveClicked()}
+                        >
+                            Sparen
+                        </Button>
                     </View>
-
-                    <TextInput
-                        label='Datum'
-                        value={this.state.date.toDateString()}
-                        keyboardType = 'numeric'
-                        style={{
-                            margin: 10,
-                            marginTop: 0
-                        }}
-                        onFocus={this._showDateTimePicker}
-                    />
-
-                    <DateTimePicker
-                        isVisible={this.state.isDateTimePickerVisible}
-                        onConfirm={this._handleDatePicked}
-                        onCancel={this._hideDateTimePicker}
-                    />
-
-                    <Button
-                        raised
-                        primary
-                        style={{
-                            margin: 10,
-                            marginTop: 0
-                        }}
-                        onPress={() => this._handleSaveClicked()}
-                    >
-                        Sparen
-                    </Button>
-                </View>
-            </Modal>
+                </Modal>
+            </Portal>
+            
         );
     }
 }

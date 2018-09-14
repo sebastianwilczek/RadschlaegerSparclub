@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Toolbar, ToolbarContent, ToolbarAction } from 'react-native-paper';
+import { Appbar } from 'react-native-paper';
+import App from '../../App';
 
 export class ToolbarApp extends React.Component {
     
@@ -14,12 +15,12 @@ export class ToolbarApp extends React.Component {
 
   render() {
     return (
-        <Toolbar>
-            <ToolbarAction icon="menu" onPress={this.drawerHandler} />
-            <ToolbarContent
+        <Appbar.Header>
+            <Appbar.Action icon="menu" onPress={this.drawerHandler} />
+            <Appbar.Content
                 title="Radschläger Sparclub"
             />
-        </Toolbar>
+        </Appbar.Header>
     );
   }
 }
