@@ -66,6 +66,12 @@ export class Navigation extends React.Component {
         this._recomputeSavedMoney();
         this._storeRecords();
     }
+    _deleteRecord = (index) => {
+
+        this.state.records.splice(index, 1);
+        this._recomputeSavedMoney();
+        this._storeRecords();
+    }
     _storeRecords = async () => {
         try {
             await AsyncStorage.setItem("records", JSON.stringify(this.state.records));
@@ -97,7 +103,7 @@ export class Navigation extends React.Component {
 
     
 
-    renderFlatListItem(item){
+    renderFlatListItem(item, index){
         return (
             <Surface style={{elevation: 12, padding: 8}}>
                 <Card>
@@ -109,7 +115,8 @@ export class Navigation extends React.Component {
                         <Button
                             style={{
                                 alignSelf: 'flex-end'
-                                }}>Löschen</Button>
+                                }}
+                            onPress={() => this._deleteRecord(index)}>Löschen</Button>
                     </Card.Actions>
                 </Card>
             </Surface>
@@ -168,7 +175,7 @@ export class Navigation extends React.Component {
                                 contentContainerStyle={{ paddingBottom: 220}}
                                 data={this.state.records}
                                 keyExtractor={(item, index) => index.toString()}
-                                renderItem={({item}) => this.renderFlatListItem(item)}
+                                renderItem={({item, index}) => this.renderFlatListItem(item, index)}
                             />
                         </View>
 
