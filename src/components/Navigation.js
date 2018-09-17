@@ -63,6 +63,11 @@ export class Navigation extends React.Component {
         this.setState({snackVisible: true});
         var record = {money: money, date: date.toString()};
         this.state.records.unshift(record);
+        this.state.records.sort(function(a, b) {
+            a = new Date(a.date);
+            b = new Date(b.date);
+            return a > b ? -1 : a < b ? 1 : 0;
+        });
         this._recomputeSavedMoney();
         this._storeRecords();
     }

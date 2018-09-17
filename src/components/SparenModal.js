@@ -81,12 +81,20 @@ export class SparenModal extends React.Component {
     };
      
     closeHandler(){
-        this.setState({errorVisible: true});
+        this.setState({errorVisible: false});
+        this.setState({saved: ''});
+        this.setState({notSaved: false});
+        this.setState({date: new Date()});
+        this.setState({savedMoney: 0.0});
         this.props.closeHandler();
     }
      
     saveHandler(money, date){
         this.setState({errorVisible: false});
+        this.setState({saved: ''});
+        this.setState({notSaved: false});
+        this.setState({date: new Date()});
+        this.setState({savedMoney: 0.0});
         this.props.saveHandler(money, date);
     }
 
