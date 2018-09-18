@@ -2,6 +2,7 @@ import * as React from 'react';
 import { AsyncStorage, StyleSheet, Alert, FlatList, TouchableOpacity, TextInput, View, TouchableHighlight, Modal } from 'react-native';
 import { SparenModal } from './SparenModal';
 import { FAB, Portal, Button, Text, Card, Title, Paragraph, Surface, Snackbar } from 'react-native-paper';
+import PushNotification from 'react-native-push-notification';
 
 const styles = StyleSheet.create({
     container: {
@@ -46,7 +47,25 @@ export class Navigation extends React.Component {
         totalMoney: 0.0,
         snackVisible: false
     };
-    
+
+    constructor(props){
+        _onNotification = (notif) => {
+            //Alert.alert(notif.title, notif.message);
+            if(notif.tag === "reminder"){
+                this._showModal();
+            }
+        }
+
+        PushNotification.configure({
+            // (required) Called when a remote or local notification is opened or received
+            onNotification: _onNotification, //this._onNotification
+      
+            // Should the initial notification be popped automatically
+            // default: true
+            popInitialNotification: true
+        });
+        super();
+    }
     _showModal = () => {
         this.setState({ modalVisible: true });
         this.setState({ open: false });
@@ -192,10 +211,52 @@ export class Navigation extends React.Component {
                     <View>
                         <Text>Hier werden die Einstellungen angezeigt.</Text>
                         <Button onPress={() => {
-                            AsyncStorage.setItem("records", JSON.stringify([]));
-                            this.setState({records: []});
-                            this.setState({totalMoney: 0.0});
-                            }}>Clear Storage</Button>
+                            var date = new Date(Date.now());
+                            var dateNextFriday = new Date(+date+(7-(date.getDay()+4)%7)*86400000); //2 for Friday, 4 for Wednesday
+                            PushNotification.localNotificationSchedule({
+                                /* Android Only Properties */
+                                autoCancel: true, // (optional) default: true
+                                largeIcon: "ic_launcher", // (optional) default: "ic_launcher"
+                                smallIcon: "ic_notification", // (optional) default: "ic_notification" with fallback for "ic_launcher"
+                                //bigText: "Big Text", // (optional) default: "message" prop
+                                //subText: "SubText", // (optional) default: none
+                                color: "green", // (optional) default: system default
+                                vibrate: true, // (optional) default: true
+                                vibration: 300, // vibration length in milliseconds, ignored if vibrate=false, default: 1000
+                                tag: 'reminder', // (optional) add tag to message
+                                group: "sparclub", // (optional) add group to message
+                          
+                                /* iOS and Android properties */
+                                title: "Denk ans Sparen!", // (optional)
+                                message: "Du wolltest daran errinnert werden zu sparen.", // (required)
+                                //actions: '["Jetzt Sparen"]',  // (Android only) See the doc for notification actions to know more
+                                date: new Date(dateNextFriday.getFullYear(), dateNextFriday.getMonth(), dateNextFriday.getDate(), 17, 0, 0),
+                                repeatType: "day"
+                              });
+                              Alert.alert(dateNextFriday.getFullYear() + " " + dateNextFriday.getMonth() + " " + dateNextFriday.getDate() + " " + 17 + " " + 0 + " " + 0);
+                            }}
+                        >Send Push Reminder</Button>
+                        <Button onPress={() => {
+                            PushNotification.localNotification({
+                                /* Android Only Properties */
+                                autoCancel: true, // (optional) default: true
+                                largeIcon: "ic_launcher", // (optional) default: "ic_launcher"
+                                smallIcon: "ic_notification", // (optional) default: "ic_notification" with fallback for "ic_launcher"
+                                //bigText: "Big Text", // (optional) default: "message" prop
+                                //subText: "SubText", // (optional) default: none
+                                color: "green", // (optional) default: system default
+                                vibrate: true, // (optional) default: true
+                                vibration: 300, // vibration length in milliseconds, ignored if vibrate=false, default: 1000
+                                tag: 'forgotten', // (optional) add tag to message
+                                group: "sparclub", // (optional) add group to message
+                          
+                                /* iOS and Android properties */
+                                title: "Du hast das Sparen vergessen!", // (optional)
+                                message: "Ich habe eingetragen, dass du vergessen hast zu sparen.", // (required)
+                                //actions: '["Ansehen"]',  // (Android only) See the doc for notification actions to know more
+                              });
+                            }}
+                        >Send Push Forgotten</Button>
                     </View>
                 );
         }
