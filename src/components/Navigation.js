@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { AsyncStorage, StyleSheet, Alert, FlatList, TouchableOpacity, TextInput, View, TouchableHighlight, Modal } from 'react-native';
 import { SparenModal } from './SparenModal';
-import { FAB, Portal, Button, Text, Card, Title, Paragraph, Surface, Snackbar } from 'react-native-paper';
+import { FAB, Portal, Button, Text, Card, Title, Paragraph, Surface, Snackbar, Divider, Switch } from 'react-native-paper';
 import PushNotification from 'react-native-push-notification';
+import { Dropdown } from 'react-native-material-dropdown';
 
 const styles = StyleSheet.create({
     container: {
@@ -45,7 +46,9 @@ export class Navigation extends React.Component {
         open: false,
         records: [],
         totalMoney: 0.0,
-        snackVisible: false
+        snackVisible: false,
+        scheduledDay: "Freitag",
+        shouldSchedule: true
     };
 
     constructor(props){
@@ -122,10 +125,76 @@ export class Navigation extends React.Component {
     }
 
     componentDidMount() {
+        this._scheduleNotifications();
         this._retrieveRecords();
     }
 
-    
+    _scheduleNotifications = async () => {
+        try {
+            var notificationsScheduled = await AsyncStorage.getItem("notificationsScheduled") === "true";
+            if (notificationsScheduled == null || !notificationsScheduled) {
+                var date = new Date(Date.now());
+                var dateNextDay = new Date(+date+(7-(date.getDay()+2)%7)*86400000); //2 for Friday, 4 for Wednesday
+                var scheduledDate = new Date(dateNextDay.getFullYear(), dateNextDay.getMonth(), dateNextDay.getDate(), 8, 0, 0);
+                PushNotification.localNotificationSchedule({
+                    autoCancel: true,
+                    largeIcon: "ic_launcher", 
+                    smallIcon: "ic_notification",
+                    color: "green",
+                    vibrate: true,
+                    vibration: 300,
+                    tag: 'reminder',
+                    group: "sparclub",
+                
+                    title: "Denk ans Sparen!", 
+                    message: "Du wolltest daran errinnert werden zu sparen.", 
+                    date: scheduledDate,
+                    repeatType: "minute"
+                    });
+                Alert.alert(scheduledDate.getFullYear() + " " + scheduledDate.getMonth() + " " + scheduledDate.getDate() + " " + scheduledDate.getHours() + " " + scheduledDate.getMinutes() + " " + scheduledDate.getSeconds());
+                await AsyncStorage.setItem("notificationsScheduled", "true");
+                await AsyncStorage.setItem("scheduledDate", "Freitag");
+            }
+        } catch (error) {
+            await AsyncStorage.setItem("notificationsScheduled", false);
+        }
+    }
+
+    _rescheduleNotifications = async (dateOfWeek) => {
+        PushNotification.cancelAllLocalNotifications();
+        try {
+            if(dateOfWeek === "Montag") var dateDiff = 6;
+            if(dateOfWeek === "Dienstag") var dateDiff = 5;
+            if(dateOfWeek === "Mittwoch") var dateDiff = 4;
+            if(dateOfWeek === "Donnerstag") var dateDiff = 3;
+            if(dateOfWeek === "Freitag") var dateDiff = 2;
+            if(dateOfWeek === "Samstag") var dateDiff = 1;
+            if(dateOfWeek === "Sonntag") var dateDiff = 0;
+            var date = new Date(Date.now());
+            var dateNextDay = new Date(+date+(7-(date.getDay()+dateDiff)%7)*86400000); //2 for Friday, 4 for Wednesday
+            var scheduledDate = new Date(dateNextDay.getFullYear(), dateNextDay.getMonth(), dateNextDay.getDate(), 8, 0, 0);
+            PushNotification.localNotificationSchedule({
+                autoCancel: true,
+                largeIcon: "ic_launcher", 
+                smallIcon: "ic_notification",
+                color: "green",
+                vibrate: true,
+                vibration: 300,
+                tag: 'reminder',
+                group: "sparclub",
+            
+                title: "Denk ans Sparen!", 
+                message: "Du wolltest daran errinnert werden zu sparen.", 
+                date: scheduledDate,
+                repeatType: "minute"
+                });
+            Alert.alert(scheduledDate.getFullYear() + " " + scheduledDate.getMonth() + " " + scheduledDate.getDate() + " " + scheduledDate.getHours() + " " + scheduledDate.getMinutes() + " " + scheduledDate.getSeconds());
+            await AsyncStorage.setItem("notificationsScheduled", "true");
+            await AsyncStorage.setItem("scheduledDate", dateOfWeek);
+        } catch (error) {
+            await AsyncStorage.setItem("notificationsScheduled", false);
+        }
+    }
 
     renderFlatListItem(item, index){
         return (
@@ -207,35 +276,73 @@ export class Navigation extends React.Component {
                     </View>
                 );
             default:
+                let data = [{
+                    value: 'Montag',
+                }, {
+                    value: 'Dienstag',
+                }, {
+                    value: 'Mittwoch',
+                }, {
+                    value: 'Donnerstag',
+                }, {
+                    value: 'Freitag',
+                }, {
+                    value: 'Samstag',
+                }, {
+                    value: 'Sonntag',
+                }];
                 return (
                     <View>
                         <Text>Hier werden die Einstellungen angezeigt.</Text>
-                        <Button onPress={() => {
-                            var date = new Date(Date.now());
-                            var dateNextFriday = new Date(+date+(7-(date.getDay()+4)%7)*86400000); //2 for Friday, 4 for Wednesday
-                            PushNotification.localNotificationSchedule({
-                                /* Android Only Properties */
-                                autoCancel: true, // (optional) default: true
-                                largeIcon: "ic_launcher", // (optional) default: "ic_launcher"
-                                smallIcon: "ic_notification", // (optional) default: "ic_notification" with fallback for "ic_launcher"
-                                //bigText: "Big Text", // (optional) default: "message" prop
-                                //subText: "SubText", // (optional) default: none
-                                color: "green", // (optional) default: system default
-                                vibrate: true, // (optional) default: true
-                                vibration: 300, // vibration length in milliseconds, ignored if vibrate=false, default: 1000
-                                tag: 'reminder', // (optional) add tag to message
-                                group: "sparclub", // (optional) add group to message
-                          
-                                /* iOS and Android properties */
-                                title: "Denk ans Sparen!", // (optional)
-                                message: "Du wolltest daran errinnert werden zu sparen.", // (required)
-                                //actions: '["Jetzt Sparen"]',  // (Android only) See the doc for notification actions to know more
-                                date: new Date(dateNextFriday.getFullYear(), dateNextFriday.getMonth(), dateNextFriday.getDate(), 17, 0, 0),
-                                repeatType: "day"
-                              });
-                              Alert.alert(dateNextFriday.getFullYear() + " " + dateNextFriday.getMonth() + " " + dateNextFriday.getDate() + " " + 17 + " " + 0 + " " + 0);
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                margin: 10,
+                                marginTop: this.state.notSaved ? 15 : 0
                             }}
-                        >Send Push Reminder</Button>
+                        >
+                            <Text
+                                style={{
+                                    fontSize: 16,
+                                    flex: 1
+                                }}>Ans Sparen errinnern</Text>
+                            <Switch
+                                value={this.state.shouldSchedule}
+                                onValueChange={() => {
+                                    var newState = !this.state.shouldSchedule
+                                    this.setState({ shouldSchedule: newState });
+                                }}
+                                style={{
+                                    alignSelf: 'flex-end'
+                                }}
+                            />
+                        </View>
+                        {!(this.state.shouldSchedule) ? <View /> : 
+                        <View>
+                            <Dropdown
+                                label="Wochentag"
+                                data={data}
+                                value={this.state.scheduledDay}
+                                onChangeText={(value) => {
+                                    this.setState({scheduledDay: value});
+                                    this._rescheduleNotifications(value);
+                                    }}
+                            />
+
+                            <Text>{this.state.scheduledDay}</Text>
+                            
+                        </View>}
+
+                        <Divider />
+
+
+
+                        <Button onPress={() => {
+                            PushNotification.cancelAllLocalNotifications();
+                            AsyncStorage.setItem("notificationsScheduled", "false");
+                            }}
+                        >Cancel all notifications</Button>
                         <Button onPress={() => {
                             PushNotification.localNotification({
                                 /* Android Only Properties */
